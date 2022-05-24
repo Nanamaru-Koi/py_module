@@ -1,2 +1,0 @@
-def testcall():
-    print("test")
