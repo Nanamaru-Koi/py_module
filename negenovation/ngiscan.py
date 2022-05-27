@@ -9,11 +9,6 @@ def readtxt( path,data_form='data' ):
 	""" ==  readtxt  ==========
 	
 	"""
-	
-	if type(path) == str:
-
-
-	elif type(path) == list:
 
 
 
