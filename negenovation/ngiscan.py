@@ -131,7 +131,7 @@ def readNPY( path ):
 	return data_list
 
 
-def __findpath(path,filetype='txt'):
+def findpath(path,filetype='txt'):
 	
 	folders = []
 	file_ext = '*'+filetype
@@ -157,7 +157,6 @@ def __findpath(path,filetype='txt'):
 					folders.append(each_folder_lv1)
 					#print(files_txt)
 
-	print(folders)
 	return folders
 
 
