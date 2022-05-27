@@ -129,3 +129,35 @@ def readNPY( path ):
 				
 	
 	return data_list
+
+
+def __findpath(path,filetype='txt'):
+	
+	folders = []
+	file_ext = '*'+filetype
+
+	#親フォルダ下のフォルダのパスを格納する。
+	folder_lv1 = natsorted(glob.glob(  os.path.join( path, '[0-9-h]*')   ))
+
+	for each_folder_lv1 in folder_lv1:
+		files_txt = natsorted(glob.glob(  os.path.join( each_folder_lv1,file_ext)   ))
+
+		if len(files_txt) != 0:
+			folders.append(each_folder_lv1)
+			#print(files_txt)
+		else:
+			#さらに下の階層を読み込む
+			folder_lv2 = natsorted(glob.glob(  os.path.join( each_folder_lv1, '[0-9-h]*')   ))
+
+			#level2のフォルダないのコンテンツを読み込む
+			for each_folder_lv2 in folder_lv2:
+				files_txt = natsorted(glob.glob(  os.path.join( each_folder_lv2,file_ext)   ))
+
+				if len(files_txt) != 0:
+					folders.append(each_folder_lv1)
+					#print(files_txt)
+
+	print(folders)
+	return folders
+
+
