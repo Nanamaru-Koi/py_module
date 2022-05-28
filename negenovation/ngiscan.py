@@ -76,6 +76,7 @@ def readtxt(path,fileform='data',flag_deb=0):
 	new_all_data[:,0] = np.arange(0,new_all_data.shape[0]) * (0.25/3600)
 	
 	new_length = np.vstack([np.array(time_len), np.array(length),np.array(length) - np.array(length)[0]]).T
+	new_length[:,2] *= 1000
 	
 	return (new_all_data, new_length, fig_title)
 	
