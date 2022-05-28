@@ -4,8 +4,10 @@ import pickle
 import numpy as np
 import copy
 from natsort import natsorted
+from tqdm.notebook import trange
+import gc
 
-def readtxt(path,fileform='data'):
+def readtxt(path,fileform='data',flag_deb=0):
 	""" ==  readtxt  ==========
 	
 	"""
@@ -27,7 +29,7 @@ def readtxt(path,fileform='data'):
 	
 	fig_title = ["0h"]
 	
-	
+	if flag_deb == 1: print(folders)
 		
 	for data_folder in folders:
 		files_txt = natsorted(glob.glob(  os.path.join( data_folder, fileform + "*" + '.txt')   ))
@@ -73,82 +75,123 @@ def readtxt(path,fileform='data'):
 	#print(new_all_data.shape[0])
 	new_all_data[:,0] = np.arange(0,new_all_data.shape[0]) * (0.25/3600)
 	
-	new_length = np.vstack([np.array(time_len), np.array(length)]).T
+	new_length = np.vstack([np.array(time_len), np.array(length),np.array(length) - np.array(length)[0]]).T
 	
 	return (new_all_data, new_length, fig_title)
 	
 
-def readNPY( path ):
+def readNPY( path,fileform='data'):
 	""" ==  readNPY  ==========
 	
 	"""
-	
-	folders_top = natsorted(glob.glob(  os.path.join( path, '[0-9]*')   ))
-	
 	data_list = []
-	
-	for folder_top in folders_top:
-		
-		folders_under = natsorted(glob.glob(  os.path.join( folder_top, '[0-9]*')   ))
-		
-		for data_folder in folders_under:
-			files_txt = natsorted(glob.glob(  os.path.join( data_folder, '*npy')   ))
-			
-			# reading all the files
-			#length : tool length
-			#time_len : time for tool length
-			#data_np
-			
-			
-			#print("---------------------------")
-			#print(data_folder)
-			for i,file in enumerate(files_txt):
 
-				data = np.load(file)
-				indx_sort = [0,0,0]
-        
-				data_mean = np.mean(data,axis=0)
-				z_posi = np.argmin(data_mean)
+	folders = __findpath(path,fileform,'npy')
+	if len(folders) == 0:
+		return data_list
 
-				
-				for j in [2,0,1]:
-					indx_sort[j] = int(z_posi)
-					
-					if z_posi == 2:
-						z_posi = 0
-					else:
-						z_posi += 1
-				
-				data_list.append( data[:,indx_sort] )
+	for data_folder in folders:
+		files_txt = natsorted(glob.glob(  os.path.join( data_folder, '*npy')   ))
+		
+		# reading all the files
+		#length : tool length
+		#time_len : time for tool length
+		#data_np
+		
+		
+		#print("---------------------------")
+		#print(data_folder)
+		for i,file in enumerate(files_txt):
+			data = np.load(file)
+			data_list.append( __sortdata(data) )
 				
 	
 	return data_list
 
+def readCSV(path,fileform='data'):
+	""" ==  readNPY  ==========
+	
+	"""
+	data_list = []
 
-def __findpath(path,fileform,filetype='txt'):
+	folders = __findpath(path,fileform,'csv')
+	if len(folders) == 0:
+		return data_list
+
+
+	for i in trange(len(folders)):
+		file_counter = 0
+		data_folder = folders[i]
+		files_csv = natsorted(glob.glob(  os.path.join( data_folder, fileform + '*csv')   ))
+		
+		# reading all the files
+		#length : tool length
+		#time_len : time for tool length
+		#data_np
+		
+		
+		#print("---------------------------")
+		#print(data_folder)
+		for i in trange(len(files_csv),leave=False):
+			file_csv = files_csv[i]
+			data = np.loadtxt(file_csv,delimiter=",",dtype=np.float32)
+			sorted_data = __sortdata(data)
+			
+			np.save( os.path.join(data_folder,fileform + "_" + str(file_counter) + ".npy") ,sorted_data )
+			data_list.append( sorted_data )
+			file_counter += 1
+
+			del data,sorted_data
+			gc.collect()
+				
+	
+	return data_list
+#####################################################
+#				Private functions					#
+#####################################################
+def __sortdata(data):
+	indx_sort = [0,0,0]
+	#print(data.shape)
+	data_mean = np.mean(data,axis=0)
+	z_posi = np.argmin(data_mean)
+
+	
+	for j in [2,0,1]:
+		indx_sort[j] = int(z_posi)
+		
+		if z_posi == 2:
+			z_posi = 0
+		else:
+			z_posi += 1
+
+	return data[:,indx_sort]
+
+def __findpath(path,fileform,filetype):
 	
 	folders = []
 	file_ext = fileform + '*' + filetype
 
 	#親フォルダ下のフォルダのパスを格納する。
-	folder_lv1 = natsorted(glob.glob(  os.path.join( path, '[0-9-h]*')   ))
+	folder_lv1 = natsorted(glob.glob(  os.path.join( path, '[0-9-h.]*')   ))
 
 	for each_folder_lv1 in folder_lv1:
 		files_txt = natsorted(glob.glob(  os.path.join( each_folder_lv1,file_ext)   ))
 
 		if len(files_txt) != 0:
 			folders.append(each_folder_lv1)
+			#print(each_folder_lv1)
 			#print(files_txt)
 		else:
 			#さらに下の階層を読み込む
-			folder_lv2 = natsorted(glob.glob(  os.path.join( each_folder_lv1, '[0-9-h]*')   ))
+			folder_lv2 = natsorted(glob.glob(  os.path.join( each_folder_lv1, '[0-9-h.]*')   ))
 
 			#level2のフォルダないのコンテンツを読み込む
 			for each_folder_lv2 in folder_lv2:
 				files_txt = natsorted(glob.glob(  os.path.join( each_folder_lv2,file_ext)   ))
 
 				if len(files_txt) != 0:
-					folders.append(each_folder_lv1)
+					folders.append(each_folder_lv2)
+					#print(each_folder_lv2)
 					#print(files_txt)
 
 	return folders
