@@ -5,20 +5,19 @@ import numpy as np
 import copy
 from natsort import natsorted
 
-def readtxt(path,fileform='data'):
+def readtxt( path,data_form='data' ):
 	""" ==  readtxt  ==========
 	
 	"""
 
-	folders = __findpath(path,fileform,'txt')
 
-	if len(folders) == 0:
-		return (None,None,None)
 
 	#the variable of path replesent the parent's path
 	
 	length = []
 	time_len = []
+	
+	folders_top = natsorted(glob.glob(  os.path.join( path, '[0-9]*')   ))
 	
 	
 	indx_start = 0
@@ -28,45 +27,52 @@ def readtxt(path,fileform='data'):
 	fig_title = ["0h"]
 	
 	
+	for folder_top in folders_top:
 		
-	for data_folder in folders:
-		files_txt = natsorted(glob.glob(  os.path.join( data_folder, fileform + "*" + '.txt')   ))
-		# reading all the files
-		#length : tool length
-		#time_len : time for tool length
-		#data_np
+		folders_under = natsorted(glob.glob(  os.path.join( folder_top, '[0-9]*')   ))
 		
-		
-		#print("---------------------------")
-		#print(data_folder)
-		for i,file in enumerate(files_txt):
-		
+		for data_folder in folders_under:
+			files_txt = natsorted(glob.glob(  os.path.join( data_folder, '*txt')   ))
 			
-			f = open(file,'r',encoding="utf-8")
-			f.readline()[:-1]
-			length.append( int( f.readline()[:-1] )/10000 )
-			f.close()
-			data_np = np.loadtxt(file,delimiter=',',skiprows=2)
-			
-			indx_end += data_np.shape[0]
+			#if txt files in the folder don't exist 
+			if len(files_txt) == 0:
+				continue
+			# reading all the files
+			#length : tool length
+			#time_len : time for tool length
+			#data_np
 			
 			
-			#the first tool length is supposed to 0
-			if counter_base == 0:
-				time_len.append(0)
-				all_data = np.zeros([1000000,data_np.shape[1]+1])
-			else:
-				###
-				time_len.append( time_len[counter_base-1] + data_np.shape[0]*0.25/3600 )
+			#print("---------------------------")
+			#print(data_folder)
+			for i,file in enumerate(files_txt):
 			
-			all_data[indx_start:indx_end,1:] = data_np
-			#print("S: %d, E: %d" % (indx_start, indx_end ) )
-			
-			indx_start = indx_end
-			
-			counter_base += 1
+				
+				f = open(file,'r')
+				f.readline()[:-1]
+				length.append( int( f.readline()[:-1] )/10000 )
+				f.close()
+				data_np = np.loadtxt(file,delimiter=',',skiprows=2)
+				
+				indx_end += data_np.shape[0]
+				
+				
+				#the first tool length is supposed to 0
+				if counter_base == 0:
+					time_len.append(0)
+					all_data = np.zeros([1000000,data_np.shape[1]+1])
+				else:
+					###
+					time_len.append( time_len[counter_base-1] + data_np.shape[0]*0.25/3600 )
+				
+				all_data[indx_start:indx_end,1:] = data_np
+				#print("S: %d, E: %d" % (indx_start, indx_end ) )
+				
+				indx_start = indx_end
+				
+				counter_base += 1
 
-		fig_title.append( str( round(time_len[-1],1) ) + "h" )
+			fig_title.append( str( round(time_len[-1],1) ) + "h" )
 	#adjustment of all_data
 	logi = all_data[:,4] != 0
 	new_all_data = all_data[logi,:]
@@ -125,10 +131,10 @@ def readNPY( path ):
 	return data_list
 
 
-def __findpath(path,fileform,filetype='txt'):
+def findpath(path,filetype='txt'):
 	
 	folders = []
-	file_ext = fileform + '*' + filetype
+	file_ext = '*'+filetype
 
 	#親フォルダ下のフォルダのパスを格納する。
 	folder_lv1 = natsorted(glob.glob(  os.path.join( path, '[0-9-h]*')   ))
