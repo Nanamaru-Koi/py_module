@@ -60,11 +60,12 @@ def readtxt( path,data_form='data' ):
 				#the first tool length is supposed to 0
 				if counter_base == 0:
 					time_len.append(0)
-					all_data = np.zeros([1000000,data_np.shape[1]+1])
+					all_data = np.zeros([2000000,data_np.shape[1]+1])
 				else:
 					###
 					time_len.append( time_len[counter_base-1] + data_np.shape[0]*0.25/3600 )
 				
+				#print("%d, %d" % (indx_start,indx_end))
 				all_data[indx_start:indx_end,1:] = data_np
 				#print("S: %d, E: %d" % (indx_start, indx_end ) )
 				
@@ -79,7 +80,8 @@ def readtxt( path,data_form='data' ):
 	#print(new_all_data.shape[0])
 	new_all_data[:,0] = np.arange(0,new_all_data.shape[0]) * (0.25/3600)
 	
-	new_length = np.vstack([np.array(time_len), np.array(length)]).T
+	new_length = np.vstack([np.array(time_len), np.array(length), np.array(length)[:] - np.array(length)[1]]).T
+	new_length[:,2] *= 1000
 	
 	return (new_all_data, new_length, fig_title)
 	
